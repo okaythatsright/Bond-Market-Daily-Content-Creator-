@@ -1,0 +1,6 @@
+{
+  "name": "Bond Market Dashboard",
+  "description": "A dashboard for daily bond and yield market synthesis, Bluesky content generation, and Google Docs/Sheets logging.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
