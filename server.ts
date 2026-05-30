@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { BskyAgent } from "@atproto/api";
+import { schedulerService } from "./src/scheduler";
 
 import { DEFAULT_BOND_SECTIONS } from "./src/data";
 
@@ -99,7 +100,8 @@ function getGenAIClient(): GoogleGenAI {
 app.get("/api/config", (req, res) => {
   res.json({
     hasGeminiKey: !!process.env.GEMINI_API_KEY,
-    currentTime: new Date().toISOString()
+    currentTime: new Date().toISOString(),
+    schedulerStatus: schedulerService.getStatus()
   });
 });
 
@@ -117,6 +119,33 @@ app.post("/api/state", (req, res) => {
   } else {
     res.status(400).json({ success: false, error: "Invalid sections array" });
   }
+});
+
+// Endpoint to trigger scheduler manually
+app.post("/api/scheduler/trigger", async (req, res) => {
+  try {
+    console.log("Manual trigger: Starting daily generation...");
+    await schedulerService.triggerImmediate();
+    res.json({
+      success: true,
+      message: "Daily generation triggered successfully"
+    });
+  } catch (error: any) {
+    console.error("Scheduler trigger error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to trigger scheduler"
+    });
+  }
+});
+
+// Get scheduler status
+app.get("/api/scheduler/status", (req, res) => {
+  const status = schedulerService.getStatus();
+  res.json({
+    success: true,
+    scheduler: status
+  });
 });
 
 // Synthesize route back-ended by Gemini
@@ -150,7 +179,7 @@ Provide EXACTLY one BlueSky post for each of the following 8 section IDs:
 
 CRITICAL REQUIREMENTS FOR EACH POST:
 - The entire post MUST be 300 characters or less (strictly verify before finalizing!).
-- Translate the numeric values (yields, spreads, basis points) into actual economic context. For example, explain how bond yield curve movements reflect inflation anxieties, global recessions, or shifts in Federal Reserve policies.
+- Translate the numeric values (yields, spreads, basis points) into actual economic context. For example, explain how bond yield curve movements reflect inflation anxieties, global recessions, or market sentiment.
 - Do NOT repeat the exact same piece of data inside the post twice. Keep descriptions concise and dense.
 - Ensure the tone is direct, professional, clear, and highly insightful.
 - Write as an expert bond strategist, NOT as an AI assistant. No self-praise or introductory filler.
@@ -859,6 +888,15 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Bond Market app server booted successfully on Host 0.0.0.0:${PORT}`);
+    
+    // Initialize scheduler service
+    try {
+      schedulerService.initialize().catch(err => {
+        console.error("Failed to initialize scheduler:", err);
+      });
+    } catch (err) {
+      console.error("Scheduler initialization error:", err);
+    }
   });
 }
 
