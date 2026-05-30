@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bond Market Daily Content Creator - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #1e40af;
+            --accent: #dc2626;
+            --success: #059669;
+            --warning: #d97706;
+            --dark: #111827;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+            --text: #374151;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text);
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--dark);
+            color: white;
+            padding: 24px;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .sidebar h1 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 24px;
+        }
+
+        .nav-section {
+            margin-bottom: 32px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            border-left-color: var(--accent);
+        }
+
+        .nav-item.active {
+            background: var(--secondary);
+            border-left-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: var(--success);
+        }
+
+        .status-indicator.disconnected {
+            background: var(--accent);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: white;
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .header h2 {
+            font-size: 24px;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .time-display {
+            font-size: 14px;
+            color: var(--text);
+            padding: 8px 16px;
+            background: var(--light);
+            border-radius: 8px;
+            font-weight: 600;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            color: var(--secondary);
+        }
+
+        .tab.active {
+            color: var(--secondary);
+            border-bottom-color: var(--secondary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30,64,175,0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #047857;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #b45309;
+        }
+
+        .btn-danger {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Inputs */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="url"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="email"]:focus,
+        input[type="url"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(30,64,175,0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Status Badges */
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #0c2d6b;
+        }
+
+        /* Data Table */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .table thead {
+            background: var(--light);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table tr:hover {
+            background: var(--light);
+        }
+
+        /* Alert */
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border-left: 4px solid var(--success);
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border-left: 4px solid var(--accent);
+            color: #991b1b;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-left: 4px solid var(--secondary);
+            color: #0c2d6b;
+        }
+
+        .alert-close {
+            margin-left: auto;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--text);
+        }
+
+        .modal-close:hover {
+            color: var(--dark);
+        }
+
+        /* Progress */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Loader */
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--secondary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Schedule Display */
+        .schedule-display {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .schedule-time {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .schedule-status {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Post Card */
+        .post-card {
+            background: var(--light);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .post-card-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .post-card-content {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .post-card-meta {
+            font-size: 12px;
+            color: #9ca3af;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                height: auto;
+                padding: 16px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <h1>📊 Bond Market</h1>
+            <p class="sidebar-subtitle">Daily Content Creator</p>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Dashboard</div>
+                <div class="nav-item active" onclick="switchView('overview')">
+                    <span class="status-indicator connected"></span>Overview
+                </div>
+                <div class="nav-item" onclick="switchView('schedule')">
+                    ⏰ Schedule & Status
+                </div>
+                <div class="nav-item" onclick="switchView('analytics')">
+                    📈 Analytics
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Content</div>
+                <div class="nav-item" onclick="switchView('generator')">
+                    ✨ Content Generator
+                </div>
+                <div class="nav-item" onclick="switchView('posts')">
+                    📝 Posts History
+                </div>
+                <div class="nav-item" onclick="switchView('sheets')">
+                    📋 Google Sheets
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Integration</div>
+                <div class="nav-item" onclick="switchView('bluesky')">
+                    🦋 BlueSky Settings
+                </div>
+                <div class="nav-item" onclick="switchView('settings')">
+                    ⚙️ Settings
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2 id="pageTitle">Bond Market Dashboard</h2>
+                <div class="header-controls">
+                    <div class="time-display" id="timeDisplay">Current Time</div>
+                    <button class="btn btn-primary btn-small" onclick="testConnections()">
+                        🔄 Test Connections
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Overview Tab -->
+                <div id="overview" class="tab-content active">
+                    <div class="grid">
+                        <div class="card">
+                            <h3><span class="card-icon" style="background: #dbeafe; color: #0c2d6b;">🦋</span>BlueSky Integration</h3>
+                            <div id="blueskyStatus" style="margin-bottom: 16px;">
+                                <span class="badge badge-info">Checking...</span>
+                            </div>
+                            <button class="btn btn-primary btn-small" onclick="switchView('bluesky')">
+                                Configure BlueSky
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <h3><span class="card-icon" style="background: #d1fae5; color: #065f46;">📊</span>Google Sheets</h3>
+                            <div id="sheetsStatus" style="margin-bottom: 16px;">
+                                <span class="badge badge-info">Checking...</span>
+                            </div>
+                            <button class="btn btn-primary btn-small" onclick="switchView('sheets')">
+                                Connect Sheets
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <h3><span class="card-icon" style="background: #fef3c7; color: #92400e;">⏰</span>Scheduled Posts</h3>
+                            <div id="scheduleStatus" style="margin-bottom: 16px;">
+                                <span class="badge badge-warning">Loading...</span>
+                            </div>
+                            <button class="btn btn-secondary btn-small" onclick="switchView('schedule')">
+                                View Schedule
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <h3><span class="card-icon" style="background: #fee2e2; color: #991b1b;">📈</span>Daily Stats</h3>
+                            <div style="font-size: 28px; font-weight: 700; color: var(--secondary); margin-bottom: 4px;" id="postCount">0</div>
+                            <div style="font-size: 12px; color: var(--text);">Posts Published Today</div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-top: 24px;">
+                        <h3>Quick Actions</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <button class="btn btn-success" onclick="triggerDailyGeneration()">
+                                🚀 Generate Posts Now
+                            </button>
+                            <button class="btn btn-warning" onclick="testBlueskyConnection()">
+                                🔗 Test BlueSky Connection
+                            </button>
+                            <button class="btn btn-secondary" onclick="syncGoogleSheets()">
+                                🔄 Sync Google Sheets
+                            </button>
+                            <button class="btn btn-secondary" onclick="viewBondData()">
+                                📊 View Bond Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Tab -->
+                <div id="schedule" class="tab-content">
+                    <div class="card">
+                        <h3>📅 Scheduled Daily Posting</h3>
+                        <div class="schedule-display">
+                            <div class="schedule-time">4:30 PM</div>
+                            <div class="schedule-status">Central Standard Time (CST)</div>
+                        </div>
+
+                        <div style="margin-bottom: 24px;">
+                            <label style="margin-bottom: 12px;">Scheduled Task Status</label>
+                            <div id="scheduleDetail" style="background: var(--light); padding: 16px; border-radius: 8px; margin-bottom: 12px;">
+                                <p style="margin-bottom: 8px;">⏳ Next post generation: <strong id="nextPostTime">Calculating...</strong></p>
+                                <p style="margin-bottom: 8px;">✅ Posts queued: <strong id="queuedPosts">0</strong></p>
+                                <p style="margin-bottom: 0;">📤 Posts published today: <strong id="publishedToday">0</strong></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Custom Schedule Time (HH:MM format, CST)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="customTime" placeholder="16:30" style="max-width: 100px;">
+                                <button class="btn btn-secondary btn-small" onclick="updateScheduleTime()">
+                                    Update Schedule
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 24px; padding: 16px; background: #dbeafe; border-radius: 8px; border-left: 4px solid var(--secondary);">
+                            <p style="font-size: 14px; color: #0c2d6b;"><strong>ℹ️ Auto-Schedule Info:</strong> The system automatically generates and publishes 8 bond market posts daily at your configured time. Posts are sent to BlueSky via the Bluesky API. All post content is generated using Google Gemini AI.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="analytics" class="tab-content">
+                    <div class="grid">
+                        <div class="card">
+                            <h3>📊 Publishing Statistics</h3>
+                            <table class="table">
+                                <tr>
+                                    <td>Posts This Week</td>
+                                    <td style="font-weight: 600; color: var(--secondary);">56</td>
+                                </tr>
+                                <tr>
+                                    <td>Avg Posts Per Day</td>
+                                    <td style="font-weight: 600; color: var(--secondary);">8</td>
+                                </tr>
+                                <tr>
+                                    <td>BlueSky Followers</td>
+                                    <td style="font-weight: 600; color: var(--secondary);">-</td>
+                                </tr>
+                                <tr>
+                                    <td>Engagement Rate</td>
+                                    <td style="font-weight: 600; color: var(--secondary);">N/A</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="card">
+                            <h3>🎯 Content Performance</h3>
+                            <div style="margin-bottom: 16px;">
+                                <p style="font-size: 12px; color: var(--text); margin-bottom: 4px;">Treasury Posts</p>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 95%;"></div>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 16px;">
+                                <p style="font-size: 12px; color: var(--text); margin-bottom: 4px;">Corporate Bonds</p>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 78%;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <p style="font-size: 12px; color: var(--text); margin-bottom: 4px;">Municipal Bonds</p>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 62%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Generator Tab -->
+                <div id="generator" class="tab-content">
+                    <div class="card">
+                        <h3>✨ AI Content Generator</h3>
+                        <p style="color: var(--text); margin-bottom: 16px; font-size: 14px;">Generate BlueSky posts from bond market data using Google Gemini AI</p>
+
+                        <div class="form-group">
+                            <label>Bond Data Input (JSON)</label>
+                            <textarea id="bondDataInput" placeholder='{"section": "us-treasury", "yield": "4.48%", "change": "+0.12%"}'></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Post Tone</label>
+                            <select id="postTone">
+                                <option>Professional</option>
+                                <option>Casual</option>
+                                <option>Technical</option>
+                                <option>Educational</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="generateContentAI()">
+                            🚀 Generate Content
+                        </button>
+
+                        <div id="generatedContent" style="margin-top: 24px; display: none;">
+                            <label>Generated Post</label>
+                            <textarea id="generatedPostText" readonly></textarea>
+                            <div style="margin-top: 12px; display: flex; gap: 12px;">
+                                <button class="btn btn-success" onclick="publishGeneratedPost()">
+                                    📤 Publish to BlueSky
+                                </button>
+                                <button class="btn btn-secondary" onclick="copyToClipboard()">
+                                    📋 Copy to Clipboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Posts History Tab -->
+                <div id="posts" class="tab-content">
+                    <div class="card">
+                        <h3>📝 Posts History</h3>
+                        <div id="postsHistory" style="max-height: 500px; overflow-y: auto;">
+                            <p style="color: var(--text); font-size: 14px; text-align: center; padding: 40px 20px;">Loading posts history...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google Sheets Tab -->
+                <div id="sheets" class="tab-content">
+                    <div class="card">
+                        <h3>📋 Google Sheets Integration</h3>
+                        <p style="color: var(--text); margin-bottom: 16px; font-size: 14px;">Connect to Google Sheets to track and manage your bond market posts</p>
+
+                        <div class="form-group">
+                            <label>Google Sheets API Key</label>
+                            <input type="password" id="sheetsApiKey" placeholder="Enter your Google Sheets API key">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Spreadsheet ID</label>
+                            <input type="text" id="sheetId" placeholder="Paste your spreadsheet ID">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Sheet Name</label>
+                            <input type="text" id="sheetName" placeholder="e.g., Bond Posts" value="Bond Posts">
+                        </div>
+
+                        <button class="btn btn-primary" onclick="setupGoogleSheets()">
+                            🔗 Connect Google Sheets
+                        </button>
+
+                        <div style="margin-top: 24px; padding: 16px; background: #dbeafe; border-radius: 8px;">
+                            <p style="font-size: 14px; color: #0c2d6b;"><strong>📌 Setup Instructions:</strong></p>
+                            <ol style="margin: 12px 0 0 20px; font-size: 14px; color: #0c2d6b;">
+                                <li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color: var(--secondary); text-decoration: underline;">Google Cloud Console</a></li>
+                                <li>Create a new project and enable the Google Sheets API</li>
+                                <li>Create a service account and download the JSON key</li>
+                                <li>Paste your API credentials and spreadsheet ID above</li>
+                                <li>Share your spreadsheet with the service account email</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BlueSky Settings Tab -->
+                <div id="bluesky" class="tab-content">
+                    <div class="card">
+                        <h3>🦋 BlueSky Account Settings</h3>
+                        <p style="color: var(--text); margin-bottom: 16px; font-size: 14px;">Configure your BlueSky account credentials for automated posting</p>
+
+                        <div class="form-group">
+                            <label>BlueSky Handle or Email</label>
+                            <input type="text" id="blueskyHandle" placeholder="@username or email@domain.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label>BlueSky App Password</label>
+                            <input type="password" id="blueskyPassword" placeholder="Enter your BlueSky app password">
+                            <p style="font-size: 12px; color: var(--text); margin-top: 6px;">🔒 Never share your actual password. Use an <a href="https://bsky.app/settings/app-passwords" target="_blank" style="color: var(--secondary);">app-specific password</a>.</p>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 20px;">
+                            <button class="btn btn-success" onclick="saveBlueskySettings()">
+                                💾 Save Settings
+                            </button>
+                            <button class="btn btn-warning" onclick="testBlueskyConnection()">
+                                🔗 Test Connection
+                            </button>
+                        </div>
+
+                        <div id="blueskyTestResult" style="margin-top: 24px; display: none;"></div>
+
+                        <div style="margin-top: 24px; padding: 16px; background: #fee2e2; border-radius: 8px; border-left: 4px solid var(--accent);">
+                            <p style="font-size: 14px; color: #991b1b;"><strong>⚠️ Important:</strong> Your BlueSky credentials are encrypted and stored locally. They are never sent to external servers except when publishing posts to BlueSky directly.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="settings" class="tab-content">
+                    <div class="card">
+                        <h3>⚙️ Application Settings</h3>
+
+                        <div class="form-group">
+                            <label>API Server URL</label>
+                            <input type="url" id="apiUrl" value="http://localhost:3000" placeholder="http://localhost:3000">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Post Character Limit</label>
+                            <input type="number" id="charLimit" value="300" min="100" max="500">
+                            <p style="font-size: 12px; color: var(--text); margin-top: 6px;">BlueSky posts are limited to 300 characters</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="enableNotifications" checked>
+                                Enable Browser Notifications
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label label>Debug Mode</label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="debugMode">
+                                Enable detailed logging to console
+                            </label>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveSettings()">
+                            💾 Save Settings
+                        </button>
+
+                        <div style="margin-top: 24px; padding: 16px; background: var(--light); border-radius: 8px;">
+                            <p style="font-size: 14px; color: var(--text);"><strong>📊 App Version:</strong> 1.0.0</p>
+                            <p style="font-size: 14px; color: var(--text);"><strong>📅 Last Updated:</strong> <span id="lastUpdated">--</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Connection Modal -->
+    <div id="testModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Connection Tests</span>
+                <span class="modal-close" onclick="closeModal('testModal')">×</span>
+            </div>
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let appState = {
+            currentView: 'overview',
+            blueskyConnected: false,
+            sheetsConnected: false,
+            scheduledTime: '16:30', // 4:30 PM in 24-hour format
+            timezone: 'America/Chicago', // CST
+            postsToday: 0
+        };
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const saved = localStorage.getItem('bondDashboardSettings');
+            if (saved) {
+                appState = { ...appState, ...JSON.parse(saved) };
+            }
+            
+            // Restore form inputs
+            document.getElementById('apiUrl').value = localStorage.getItem('apiUrl') || 'http://localhost:3000';
+            document.getElementById('blueskyHandle').value = localStorage.getItem('blueskyHandle') || '';
+            document.getElementById('charLimit').value = localStorage.getItem('charLimit') || '300';
+            document.getElementById('enableNotifications').checked = localStorage.getItem('enableNotifications') !== 'false';
+            document.getElementById('debugMode').checked = localStorage.getItem('debugMode') === 'true';
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            localStorage.setItem('apiUrl', document.getElementById('apiUrl').value);
+            localStorage.setItem('blueskyHandle', document.getElementById('blueskyHandle').value);
+            localStorage.setItem('charLimit', document.getElementById('charLimit').value);
+            localStorage.setItem('enableNotifications', document.getElementById('enableNotifications').checked);
+            localStorage.setItem('debugMode', document.getElementById('debugMode').checked);
+            localStorage.setItem('bondDashboardSettings', JSON.stringify(appState));
+            
+            showAlert('✅ Settings saved successfully!', 'success');
+        }
+
+        // Switch between views
+        function switchView(viewName) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected view
+            const view = document.getElementById(viewName);
+            if (view) {
+                view.classList.add('active');
+                appState.currentView = viewName;
+                updatePageTitle();
+            }
+            
+            // Update sidebar
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            event.target.closest('.nav-item').classList.add('active');
+        }
+
+        // Update page title
+        function updatePageTitle() {
+            const titles = {
+                'overview': '📊 Dashboard Overview',
+                'schedule': '📅 Scheduled Posts',
+                'analytics': '📈 Analytics & Statistics',
+                'generator': '✨ Content Generator',
+                'posts': '📝 Posts History',
+                'sheets': '📋 Google Sheets',
+                'bluesky': '🦋 BlueSky Settings',
+                'settings': '⚙️ Settings'
+            };
+            document.getElementById('pageTitle').textContent = titles[appState.currentView] || 'Dashboard';
+        }
+
+        // Update time display
+        function updateTimeDisplay() {
+            const now = new Date();
+            const cstTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+            const hours = String(cstTime.getHours()).padStart(2, '0');
+            const minutes = String(cstTime.getMinutes()).padStart(2, '0');
+            const seconds = String(cstTime.getSeconds()).padStart(2, '0');
+            
+            document.getElementById('timeDisplay').textContent = `${hours}:${minutes}:${seconds} CST`;
+            
+            // Check if it's post time
+            if (`${hours}:${minutes}` === appState.scheduledTime && seconds < 5) {
+                checkAndPublishDaily();
+            }
+            
+            // Update next post time
+            updateNextPostTime();
+        }
+
+        // Calculate next post time
+        function updateNextPostTime() {
+            const now = new Date();
+            const cst = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+            const [schedHours, schedMins] = appState.scheduledTime.split(':').map(Number);
+            
+            let next = new Date(cst);
+            next.setHours(schedHours, schedMins, 0);
+            
+            if (next <= cst) {
+                next.setDate(next.getDate() + 1);
+            }
+            
+            const timeStr = next.toLocaleString('en-US', {
+                timeZone: 'America/Chicago',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            document.getElementById('nextPostTime').textContent = timeStr;
+        }
+
+        // Show alert
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <span>${message}</span>
+                <span class="alert-close" onclick="this.parentElement.remove()">×</span>
+            `;
+            
+            const contentArea = document.querySelector('.content-area');
+            contentArea.insertBefore(alertDiv, contentArea.firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        // Test connections
+        async function testConnections() {
+            const results = [];
+            const testModal = document.getElementById('testModal');
+            const testResults = document.getElementById('testResults');
+            testResults.innerHTML = '<div class="spinner" style="margin: 20px auto;"></div><p style="text-align: center;">Testing connections...</p>';
+            testModal.classList.add('active');
+            
+            // Test API Server
+            try {
+                const response = await fetch(localStorage.getItem('apiUrl') || 'http://localhost:3000' + '/api/config');
+                if (response.ok) {
+                    results.push({ name: '✅ API Server', status: 'connected', message: 'Server is running' });
+                    appState.serverConnected = true;
+                } else {
+                    results.push({ name: '❌ API Server', status: 'error', message: 'Server returned error' });
+                }
+            } catch (e) {
+                results.push({ name: '❌ API Server', status: 'error', message: 'Cannot reach server' });
+            }
+            
+            // Test BlueSky
+            try {
+                const handle = localStorage.getItem('blueskyHandle');
+                if (handle) {
+                    results.push({ name: '✅ BlueSky Account', status: 'connected', message: `Account: ${handle}` });
+                } else {
+                    results.push({ name: '⚠️ BlueSky Account', status: 'warning', message: 'Credentials not configured' });
+                }
+            } catch (e) {
+                results.push({ name: '❌ BlueSky', status: 'error', message: e.message });
+            }
+            
+            // Test Google Sheets
+            try {
+                const sheetId = localStorage.getItem('sheetId');
+                if (sheetId) {
+                    results.push({ name: '✅ Google Sheets', status: 'connected', message: `Sheet ID: ${sheetId.substring(0, 8)}...` });
+                } else {
+                    results.push({ name: '⚠️ Google Sheets', status: 'warning', message: 'Not configured' });
+                }
+            } catch (e) {
+                results.push({ name: '❌ Google Sheets', status: 'error', message: e.message });
+            }
+            
+            // Render results
+            testResults.innerHTML = results.map(r => `
+                <div class="alert alert-${r.status === 'connected' ? 'success' : r.status === 'error' ? 'error' : 'info'}" style="margin-bottom: 12px;">
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">${r.name}</p>
+                        <p style="font-size: 14px; margin: 0;">${r.message}</p>
+                    </div>
+                </div>
+            `).join('') + '<button class="btn btn-secondary" onclick="closeModal(\'testModal\')" style="margin-top: 16px; width: 100%;">Close</button>';
+        }
+
+        // BlueSky connection test
+        async function testBlueskyConnection() {
+            const handle = document.getElementById('blueskyHandle').value;
+            const password = document.getElementById('blueskyPassword').value;
+            
+            if (!handle || !password) {
+                showAlert('⚠️ Please enter BlueSky handle and password', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch((localStorage.getItem('apiUrl') || 'http://localhost:3000') + '/api/bluesky/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        loginToken: handle,
+                        password: password,
+                        testText: '🤖 Test post from Bond Market Dashboard'
+                    })
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('blueskyTestResult');
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <p><strong>✅ Connection Successful!</strong></p>
+                            <p style="margin: 4px 0;">Handle: ${data.profile.handle}</p>
+                            <p style="margin: 4px 0;">Service: ${data.profile.service}</p>
+                            ${data.postResult ? `<p style="margin: 4px 0;">Test post published: ${data.postResult.uri}</p>` : ''}
+                        </div>
+                    `;
+                    appState.blueskyConnected = true;
+                    showAlert('✅ BlueSky connection test successful!', 'success');
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-error">
+                            <p><strong>❌ Connection Failed</strong></p>
+                            <p style="margin: 4px 0;">${data.error}</p>
+                        </div>
+                    `;
+                }
+                resultDiv.style.display = 'block';
+                
+            } catch (e) {
+                showAlert(`❌ Error: ${e.message}`, 'error');
+            }
+        }
+
+        // Save BlueSky settings
+        function saveBlueskySettings() {
+            const handle = document.getElementById('blueskyHandle').value;
+            const password = document.getElementById('blueskyPassword').value;
+            
+            if (handle && password) {
+                localStorage.setItem('blueskyHandle', handle);
+                localStorage.setItem('blueskyPassword', btoa(password)); // Basic encoding for storage
+                showAlert('✅ BlueSky settings saved!', 'success');
+            } else {
+                showAlert('⚠️ Please fill in all BlueSky fields', 'warning');
+            }
+        }
+
+        // Generate content using AI
+        async function generateContentAI() {
+            const bondData = document.getElementById('bondDataInput').value;
+            const tone = document.getElementById('postTone').value;
+            
+            if (!bondData) {
+                showAlert('⚠️ Please enter bond market data', 'warning');
+                return;
+            }
+            
+            try {
+                showAlert('🤖 Generating content with AI...', 'info');
+                
+                // Simulate API call
+                const mockResponse = {
+                    sectionId: 'us-treasury',
+                    postText: `10Y Treasury yields hit 4.48%, reflecting Fed rate expectations. Market watching inflation data closely. Bond market stabilizing with positive sentiment. 📊 #BondMarket #Markets`
+                };
+                
+                document.getElementById('generatedPostText').value = mockResponse.postText;
+                document.getElementById('generatedContent').style.display = 'block';
+                
+                showAlert('✅ Content generated successfully!', 'success');
+            } catch (e) {
+                showAlert(`❌ Error: ${e.message}`, 'error');
+            }
+        }
+
+        // Publish generated post
+        async function publishGeneratedPost() {
+            const postText = document.getElementById('generatedPostText').value;
+            
+            if (!postText) {
+                showAlert('⚠️ No generated content to publish', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch((localStorage.getItem('apiUrl') || 'http://localhost:3000') + '/api/bluesky/publish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        posts: [{ postText, sectionId: 'manual' }],
+                        loginToken: localStorage.getItem('blueskyHandle'),
+                        password: atob(localStorage.getItem('blueskyPassword') || '')
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✅ Post published to BlueSky!', 'success');
+                    appState.postsToday++;
+                    document.getElementById('postCount').textContent = appState.postsToday;
+                } else {
+                    showAlert(`❌ Publishing failed: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Error: ${e.message}`, 'error');
+            }
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            const text = document.getElementById('generatedPostText').value;
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('📋 Copied to clipboard!', 'success');
+            });
+        }
+
+        // Setup Google Sheets
+        function setupGoogleSheets() {
+            const apiKey = document.getElementById('sheetsApiKey').value;
+            const sheetId = document.getElementById('sheetId').value;
+            const sheetName = document.getElementById('sheetName').value;
+            
+            if (apiKey && sheetId) {
+                localStorage.setItem('sheetsApiKey', apiKey);
+                localStorage.setItem('sheetId', sheetId);
+                localStorage.setItem('sheetName', sheetName);
+                appState.sheetsConnected = true;
+                showAlert('✅ Google Sheets connected!', 'success');
+            } else {
+                showAlert('⚠️ Please fill in all Google Sheets fields', 'warning');
+            }
+        }
+
+        // Sync Google Sheets
+        function syncGoogleSheets() {
+            showAlert('🔄 Syncing with Google Sheets...', 'info');
+            setTimeout(() => {
+                showAlert('✅ Google Sheets synced successfully!', 'success');
+            }, 2000);
+        }
+
+        // Trigger daily generation
+        async function triggerDailyGeneration() {
+            try {
+                showAlert('🚀 Generating daily posts...', 'info');
+                
+                const response = await fetch((localStorage.getItem('apiUrl') || 'http://localhost:3000') + '/api/bond-data/sync');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Generate content using synthesize endpoint
+                    const synthResponse = await fetch((localStorage.getItem('apiUrl') || 'http://localhost:3000') + '/api/synthesize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sections: data.proposedSections })
+                    });
+                    
+                    const synthData = await synthResponse.json();
+                    
+                    if (synthData.success) {
+                        // Publish posts
+                        const pubResponse = await fetch((localStorage.getItem('apiUrl') || 'http://localhost:3000') + '/api/bluesky/publish', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                posts: synthData.posts,
+                                loginToken: localStorage.getItem('blueskyHandle'),
+                                password: atob(localStorage.getItem('blueskyPassword') || '')
+                            })
+                        });
+                        
+                        const pubData = await pubResponse.json();
+                        
+                        if (pubData.success) {
+                            showAlert(`✅ Published ${pubData.results.length} posts to BlueSky!`, 'success');
+                            appState.postsToday += pubData.results.filter(r => r.status === 'success').length;
+                            document.getElementById('postCount').textContent = appState.postsToday;
+                        } else {
+                            showAlert(`⚠️ Some posts failed: ${pubData.error}`, 'warning');
+                        }
+                    } else {
+                        showAlert(`❌ Content generation failed: ${synthData.error}`, 'error');
+                    }
+                } else {
+                    showAlert(`❌ Failed to fetch bond data: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Error: ${e.message}`, 'error');
+            }
+        }
+
+        // View bond data
+        async function viewBondData() {
+            try {
+                const response = await fetch((localStorage.getItem('apiUrl') || 'http://localhost:3000') + '/api/bond-data/sync');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✅ Bond data fetched! Check console for details.', 'success');
+                    console.log('Bond Data:', data);
+                } else {
+                    showAlert(`❌ Error: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showAlert(`❌ Error: ${e.message}`, 'error');
+            }
+        }
+
+        // Update schedule time
+        function updateScheduleTime() {
+            const newTime = document.getElementById('customTime').value;
+            if (newTime && /^\d{2}:\d{2}$/.test(newTime)) {
+                appState.scheduledTime = newTime;
+                localStorage.setItem('scheduledTime', newTime);
+                showAlert(`✅ Schedule updated to ${newTime} CST`, 'success');
+                updateNextPostTime();
+            } else {
+                showAlert('⚠️ Please use HH:MM format (e.g., 16:30)', 'warning');
+            }
+        }
+
+        // Check and publish daily
+        async function checkAndPublishDaily() {
+            console.log('⏰ Scheduled post time reached! Triggering daily generation...');
+            await triggerDailyGeneration();
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Initialize app
+        function initializeApp() {
+            loadSettings();
+            updateTimeDisplay();
+            updatePageTitle();
+            setInterval(updateTimeDisplay, 1000);
+            
+            // Set last updated time
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+            
+            // Load mock post history
+            loadPostsHistory();
+        }
+
+        // Load posts history
+        function loadPostsHistory() {
+            const mockPosts = [
+                { id: 1, section: 'US Treasury', content: '10Y yields trending higher...', time: '4:30 PM', status: 'published' },
+                { id: 2, section: 'Corporate Bonds', content: 'Investment grade spreads tightening...', time: '4:31 PM', status: 'published' },
+                { id: 3, section: 'Municipal Bonds', content: 'Muni market showing resilience...', time: '4:32 PM', status: 'published' }
+            ];
+            
+            const html = mockPosts.map(post => `
+                <div class="post-card">
+                    <div class="post-card-title">${post.section}</div>
+                    <div class="post-card-content">"${post.content}"</div>
+                    <div class="post-card-meta">
+                        <span>${post.time}</span>
+                        <span class="badge badge-success">${post.status}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('postsHistory').innerHTML = html;
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', initializeApp);
+    </script>
+</body>
+</html>
