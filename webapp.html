@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bond Market Daily Content Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-success { background: #dcfce7; color: #166534; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-2">
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                    Bond Market Daily Creator
+                </h1>
+                <div id="scheduler-status" class="text-sm"></div>
+            </div>
+            <p class="text-slate-400">Generate and publish professional bond market analysis to BlueSky</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6 flex-wrap">
+            <button class="tab-btn active px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition" data-tab="config">
+                ⚙️ Configuration
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition" data-tab="data">
+                📊 Bond Data
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition" data-tab="generate">
+                ✨ Generate Posts
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition" data-tab="publish">
+                🚀 Publish
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition" data-tab="logs">
+                📋 Logs
+            </button>
+        </div>
+
+        <!-- Content Panels -->
+        
+        <!-- Configuration Panel -->
+        <div id="config-panel" class="tab-panel space-y-6">
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-slate-800 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">BlueSky Credentials</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Handle / Email</label>
+                            <input id="bluesky-handle" type="text" placeholder="your-handle.bsky.social" class="w-full px-3 py-2 bg-slate-700 rounded border border-slate-600 focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">App Password</label>
+                            <input id="bluesky-password" type="password" placeholder="••••••••••••••••" class="w-full px-3 py-2 bg-slate-700 rounded border border-slate-600 focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <button id="test-bluesky-btn" class="w-full bg-green-600 hover:bg-green-700 px-4 py-2 rounded transition flex items-center justify-center gap-2">
+                            🧪 Test Connection
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">System Status</h3>
+                    <div id="config-status" class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Gemini API Key:</span>
+                            <span id="gemini-status" class="status-badge status-pending">Loading...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Server Status:</span>
+                            <span id="server-status" class="status-badge status-pending">Loading...</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Scheduler Status:</span>
+                            <span id="scheduler-stat" class="status-badge status-pending">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bond Data Panel -->
+        <div id="data-panel" class="tab-panel hidden space-y-6">
+            <div class="flex gap-2">
+                <button id="sync-bond-data-btn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition">
+                    🔄 Sync Bond Data
+                </button>
+                <div id="sync-status" class="text-sm text-slate-400"></div>
+            </div>
+            <div id="bond-data-display" class="grid gap-4"></div>
+        </div>
+
+        <!-- Generate Posts Panel -->
+        <div id="generate-panel" class="tab-panel hidden space-y-6">
+            <button id="generate-posts-btn" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded transition flex items-center gap-2">
+                ✨ Generate Posts with Gemini
+            </button>
+            <div id="generated-posts" class="space-y-3"></div>
+        </div>
+
+        <!-- Publish Panel -->
+        <div id="publish-panel" class="tab-panel hidden space-y-6">
+            <div class="flex gap-2">
+                <button id="publish-all-btn" class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded transition flex items-center gap-2">
+                    🚀 Publish All Posts
+                </button>
+                <button id="publish-manual-btn" class="bg-orange-600 hover:bg-orange-700 px-6 py-2 rounded transition">
+                    Trigger Scheduler
+                </button>
+            </div>
+            <div id="publish-results" class="space-y-3 max-h-96 overflow-y-auto"></div>
+        </div>
+
+        <!-- Logs Panel -->
+        <div id="logs-panel" class="tab-panel hidden space-y-6">
+            <div class="flex gap-2">
+                <button id="clear-logs-btn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition">
+                    Clear Logs
+                </button>
+            </div>
+            <div id="logs-display" class="bg-slate-900 rounded-lg p-4 font-mono text-xs max-h-96 overflow-y-auto border border-slate-700">
+                <div class="text-slate-500">Logs will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        const state = {
+            logs: [],
+            generatedPosts: [],
+            bondData: null,
+            maxLogs: 100
+        };
+
+        // UI Utilities
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            state.logs.push({ message: logEntry, type });
+            if (state.logs.length > state.maxLogs) state.logs.shift();
+            updateLogsDisplay();
+            console.log(logEntry);
+        }
+
+        function updateLogsDisplay() {
+            const logsDiv = document.getElementById('logs-display');
+            logsDiv.innerHTML = state.logs.map(log => 
+                `<div class="text-${log.type === 'error' ? 'red-400' : log.type === 'success' ? 'green-400' : 'slate-300'}">${escapeHtml(log.message)}</div>`
+            ).join('');
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Tab Navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-blue-600', 'hover:bg-blue-700'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+                
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                document.getElementById(`${tab}-panel`).classList.remove('hidden');
+            });
+        });
+
+        // API Calls
+        async function getConfig() {
+            try {
+                const res = await fetch('/api/config');
+                const data = await res.json();
+                document.getElementById('gemini-status').innerHTML = data.hasGeminiKey ? 
+                    '<span class="status-badge status-success">✓ Configured</span>' : 
+                    '<span class="status-badge status-error">✗ Missing</span>';
+                document.getElementById('server-status').innerHTML = '<span class="status-badge status-success">✓ Running</span>';
+                if (data.schedulerStatus) {
+                    document.getElementById('scheduler-stat').innerHTML = 
+                        `<span class="status-badge ${data.schedulerStatus.isRunning ? 'status-success' : 'status-pending'}">
+                            ${data.schedulerStatus.isRunning ? '✓ Running' : '⏸ Idle'}
+                        </span>`;
+                }
+                log('System config loaded', 'success');
+            } catch (err) {
+                log(`Failed to load config: ${err.message}`, 'error');
+            }
+        }
+
+        async function testBlueskyConnection() {
+            const handle = document.getElementById('bluesky-handle').value;
+            const password = document.getElementById('bluesky-password').value;
+            
+            if (!handle || !password) {
+                log('Please enter BlueSky credentials', 'error');
+                return;
+            }
+
+            document.getElementById('test-bluesky-btn').disabled = true;
+            document.getElementById('test-bluesky-btn').innerHTML = '<div class="spinner"></div> Testing...';
+
+            try {
+                const res = await fetch('/api/bluesky/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ loginToken: handle, password })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    log(`✓ BlueSky connection verified as ${data.profile.handle}`, 'success');
+                } else {
+                    log(`✗ BlueSky connection failed: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                log(`Connection error: ${err.message}`, 'error');
+            } finally {
+                document.getElementById('test-bluesky-btn').disabled = false;
+                document.getElementById('test-bluesky-btn').innerHTML = '🧪 Test Connection';
+            }
+        }
+
+        async function syncBondData() {
+            const btn = document.getElementById('sync-bond-data-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Syncing...';
+
+            try {
+                const res = await fetch('/api/bond-data/sync');
+                const data = await res.json();
+                
+                if (data.success) {
+                    state.bondData = data.proposedSections;
+                    displayBondData(data.proposedSections);
+                    log('Bond data synced successfully', 'success');
+                } else {
+                    log(`Sync failed: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                log(`Sync error: ${err.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Sync Bond Data';
+            }
+        }
+
+        function displayBondData(sections) {
+            const display = document.getElementById('bond-data-display');
+            display.innerHTML = sections.map(section => `
+                <div class="bg-slate-800 rounded-lg p-4">
+                    <h4 class="font-semibold mb-3">${section.title}</h4>
+                    <div class="space-y-2 text-sm">
+                        ${section.data.map(item => `
+                            <div class="flex justify-between text-slate-300">
+                                <span>${item.label}</span>
+                                <span class="font-mono text-blue-400">${item.value}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function generatePosts() {
+            if (!state.bondData) {
+                log('Please sync bond data first', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('generate-posts-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Generating...';
+
+            try {
+                const res = await fetch('/api/synthesize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sections: state.bondData })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    state.generatedPosts = data.posts;
+                    displayGeneratedPosts(data.posts);
+                    log(`Generated ${data.posts.length} posts`, 'success');
+                } else {
+                    log(`Generation failed: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                log(`Generation error: ${err.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '✨ Generate Posts with Gemini';
+            }
+        }
+
+        function displayGeneratedPosts(posts) {
+            const display = document.getElementById('generated-posts');
+            display.innerHTML = posts.map((post, i) => `
+                <div class="bg-slate-800 rounded-lg p-4 border-l-4 border-blue-500">
+                    <div class="font-semibold text-sm text-blue-400 mb-2">${post.sectionId}</div>
+                    <div class="text-sm text-slate-200">"${post.postText}"</div>
+                    <div class="text-xs text-slate-500 mt-2">${post.postText.length}/300 chars</div>
+                </div>
+            `).join('');
+        }
+
+        async function publishPosts() {
+            if (state.generatedPosts.length === 0) {
+                log('No posts to publish', 'error');
+                return;
+            }
+
+            const handle = document.getElementById('bluesky-handle').value;
+            const password = document.getElementById('bluesky-password').value;
+
+            if (!handle || !password) {
+                log('Please enter BlueSky credentials', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('publish-all-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Publishing...';
+
+            try {
+                const res = await fetch('/api/bluesky/publish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        posts: state.generatedPosts,
+                        loginToken: handle,
+                        password
+                    })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    displayPublishResults(data.results);
+                    log(`Published successfully`, 'success');
+                } else {
+                    log(`Publish failed: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                log(`Publish error: ${err.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Publish All Posts';
+            }
+        }
+
+        function displayPublishResults(results) {
+            const display = document.getElementById('publish-results');
+            display.innerHTML = results.map(result => {
+                let badge = 'status-pending';
+                let icon = '⏳';
+                if (result.status === 'success') { badge = 'status-success'; icon = '✓'; }
+                else if (result.status === 'failed') { badge = 'status-error'; icon = '✗'; }
+                else if (result.status === 'skipped') { badge = 'status-pending'; icon = '⊘'; }
+
+                return `
+                    <div class="bg-slate-800 rounded-lg p-4">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold">${result.sectionId}</span>
+                            <span class="status-badge ${badge}">${icon} ${result.status}</span>
+                        </div>
+                        ${result.uri ? `<div class="text-xs text-blue-400 mt-2"><a href="https://bsky.app${result.uri}" target="_blank">${result.uri}</a></div>` : ''}
+                        ${result.error ? `<div class="text-xs text-red-400 mt-2">${result.error}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Event Listeners
+        document.getElementById('test-bluesky-btn').addEventListener('click', testBlueskyConnection);
+        document.getElementById('sync-bond-data-btn').addEventListener('click', syncBondData);
+        document.getElementById('generate-posts-btn').addEventListener('click', generatePosts);
+        document.getElementById('publish-all-btn').addEventListener('click', publishPosts);
+        document.getElementById('clear-logs-btn').addEventListener('click', () => {
+            state.logs = [];
+            updateLogsDisplay();
+        });
+
+        // Initialize
+        getConfig();
+        log('Application initialized', 'success');
+    </script>
+</body>
+</html>
