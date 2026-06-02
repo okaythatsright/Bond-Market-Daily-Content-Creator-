@@ -8,6 +8,8 @@
 
 Generate and publish professional bond market insights daily at **4:30 PM CST** using Google Gemini AI, with direct BlueSky integration and Google Sheets tracking.
 
+🔗 **[Live Dashboard](https://okaythatsright.github.io/Bond-Market-Daily-Content-Creator-/)**
+
 ---
 
 ## ✨ Features
