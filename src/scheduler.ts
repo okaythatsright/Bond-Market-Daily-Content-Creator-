@@ -29,13 +29,11 @@ export class SchedulerService {
         if (!apiKey) {
             throw new Error('GEMINI_API_KEY environment variable is required');
         }
-        
-        this.geminiClient = new GoogleGenAI({
-            apiKey,
-            httpOptions: {
-                headers: { 'User-Agent': 'bond-market-scheduler' }
-            }
-        });
+
+        // The zero-config constructor auto-detects GEMINI_API_KEY and, on
+        // Netlify, the GOOGLE_GEMINI_BASE_URL injected by the AI Gateway so
+        // requests route through the gateway without a self-managed key.
+        this.geminiClient = new GoogleGenAI({});
     }
 
     /**
