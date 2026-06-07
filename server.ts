@@ -1,22 +1,66 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { BskyAgent } from "@atproto/api";
-import { schedulerService } from "./src/scheduler";
+import { getStore } from "@netlify/blobs";
 
 import { DEFAULT_BOND_SECTIONS } from "./src/data";
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// In-memory state store synced with client edits
-let savedSections: any[] = DEFAULT_BOND_SECTIONS;
+// The scheduler relies on node-cron and is only meaningful in a long-running
+// (local/self-hosted) process. It is loaded lazily inside startServer() so it
+// is never pulled into the serverless function bundle.
+let schedulerService: {
+  getStatus: () => { isRunning: boolean; lastRun: Date | null; nextRun: Date | null };
+  triggerImmediate: () => Promise<void>;
+  initialize: () => Promise<void>;
+} | null = null;
+
+const EMPTY_SCHEDULER_STATUS = { isRunning: false, lastRun: null, nextRun: null };
+
+// Persisted store for client-edited bond sections. Uses Netlify Blobs when
+// running on Netlify; falls back to an in-memory copy for local development
+// where Blobs is not configured.
+const STATE_STORE = "bond-market-state";
+const STATE_KEY = "sections";
+let inMemorySections: any[] = DEFAULT_BOND_SECTIONS;
+
+function tryGetStore() {
+  try {
+    return getStore(STATE_STORE);
+  } catch {
+    return null;
+  }
+}
+
+async function readSavedSections(): Promise<any[]> {
+  const store = tryGetStore();
+  if (!store) return inMemorySections;
+  try {
+    const data = await store.get(STATE_KEY, { type: "json" });
+    return Array.isArray(data) && data.length ? data : inMemorySections;
+  } catch {
+    return inMemorySections;
+  }
+}
+
+async function writeSavedSections(sections: any[]): Promise<void> {
+  inMemorySections = sections;
+  const store = tryGetStore();
+  if (!store) return;
+  try {
+    await store.setJSON(STATE_KEY, sections);
+  } catch (e) {
+    console.warn("State persistence to Netlify Blobs failed:", e);
+  }
+}
 
 // Helper to login to BlueSky with fallback candidates to ensure 100% login success
 async function loginBskyAgent(identifier: string, password: string): Promise<{ agent: BskyAgent; matchedHandle: string }> {
@@ -101,20 +145,21 @@ app.get("/api/config", (req, res) => {
   res.json({
     hasGeminiKey: !!process.env.GEMINI_API_KEY,
     currentTime: new Date().toISOString(),
-    schedulerStatus: schedulerService.getStatus()
+    schedulerStatus: schedulerService ? schedulerService.getStatus() : EMPTY_SCHEDULER_STATUS
   });
 });
 
 // Endpoint to retrieve the latest persisted bond indicators
-app.get("/api/state", (req, res) => {
-  res.json({ success: true, sections: savedSections });
+app.get("/api/state", async (req, res) => {
+  const sections = await readSavedSections();
+  res.json({ success: true, sections });
 });
 
 // Endpoint to update the latest bond indicators
-app.post("/api/state", (req, res) => {
+app.post("/api/state", async (req, res) => {
   const { sections } = req.body;
   if (sections && Array.isArray(sections)) {
-    savedSections = sections;
+    await writeSavedSections(sections);
     res.json({ success: true, message: "State updated successfully." });
   } else {
     res.status(400).json({ success: false, error: "Invalid sections array" });
@@ -123,6 +168,13 @@ app.post("/api/state", (req, res) => {
 
 // Endpoint to trigger scheduler manually
 app.post("/api/scheduler/trigger", async (req, res) => {
+  if (!schedulerService) {
+    res.status(503).json({
+      success: false,
+      error: "The scheduler is only available when running the long-lived server, not in serverless mode."
+    });
+    return;
+  }
   try {
     console.log("Manual trigger: Starting daily generation...");
     await schedulerService.triggerImmediate();
@@ -141,7 +193,7 @@ app.post("/api/scheduler/trigger", async (req, res) => {
 
 // Get scheduler status
 app.get("/api/scheduler/status", (req, res) => {
-  const status = schedulerService.getStatus();
+  const status = schedulerService ? schedulerService.getStatus() : EMPTY_SCHEDULER_STATUS;
   res.json({
     success: true,
     scheduler: status
@@ -873,6 +925,10 @@ Structure your response STRICTLY as a JSON object with the following properties:
 async function startServer() {
   // Vite dev mode setup vs build serve
   if (process.env.NODE_ENV !== "production") {
+    // Loaded via a non-literal specifier so esbuild/zip-it-and-ship-it never
+    // pulls Vite into the serverless function bundle.
+    const viteModule = "vite";
+    const { createServer: createViteServer } = await import(viteModule);
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -886,18 +942,27 @@ async function startServer() {
     });
   }
 
+  // Load the node-cron based scheduler only in long-running server mode. The
+  // specifier is held in a variable so the serverless bundler does not try to
+  // resolve it (and its node-cron / google-spreadsheet dependencies).
+  try {
+    const schedulerModule = "./src/scheduler";
+    const mod = await import(schedulerModule);
+    schedulerService = mod.schedulerService;
+    schedulerService?.initialize().catch((err: any) => {
+      console.error("Failed to initialize scheduler:", err);
+    });
+  } catch (err) {
+    console.warn("Scheduler service unavailable; continuing without it.", err);
+  }
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Bond Market app server booted successfully on Host 0.0.0.0:${PORT}`);
-    
-    // Initialize scheduler service
-    try {
-      schedulerService.initialize().catch(err => {
-        console.error("Failed to initialize scheduler:", err);
-      });
-    } catch (err) {
-      console.error("Scheduler initialization error:", err);
-    }
   });
 }
 
-startServer();
+// Only auto-start the long-lived server when NOT running inside Netlify
+// Functions, where the Express app is invoked through serverless-http instead.
+if (!process.env.NETLIFY) {
+  startServer();
+}

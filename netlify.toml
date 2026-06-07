@@ -1,0 +1,23 @@
+[build]
+  command = "vite build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  # Vite is only used by the long-running dev/server path, never by the
+  # serverless function, so keep it out of the function bundle.
+  external_node_modules = ["vite"]
+
+# Route the SPA's API calls to the Express app running as a Netlify Function.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# SPA fallback: serve the built index.html for client-side routes. Existing
+# static assets are served before this rule applies.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
