@@ -120,22 +120,18 @@ async function loginBskyAgent(identifier: string, password: string): Promise<{ a
   throw new Error(`Authentication failed for all options. Details:\n${errors.join("\n")}`);
 }
 
-// Initialize GenAI lazily to avoid startup crashes if key is initially absent
+// Initialize GenAI lazily to avoid startup crashes if key is initially absent.
+// On Netlify, the AI Gateway injects GEMINI_API_KEY and GOOGLE_GEMINI_BASE_URL
+// into the function runtime automatically, so no key needs to be managed. The
+// zero-config constructor auto-detects both variables and routes requests
+// through the gateway; a self-provided GEMINI_API_KEY still takes precedence.
 let aiClient: GoogleGenAI | null = null;
 function getGenAIClient(): GoogleGenAI {
   if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    if (!process.env.GEMINI_API_KEY) {
       throw new Error("GEMINI_API_KEY is not configured in the workspace environment variables.");
     }
-    aiClient = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
-    });
+    aiClient = new GoogleGenAI({});
   }
   return aiClient;
 }
